@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { 
+      return request.auth != null && request.auth.token.email_verified == true; 
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 128 && data.id == request.auth.uid &&
+             (data.get('email', '') is string && data.get('email', '').size() <= 256) &&
+             (data.get('displayName', '') is string && data.get('displayName', '').size() <= 128) &&
+             (data.get('currentLevel', '') is string && data.get('currentLevel', '').size() <= 64) &&
+             (data.get('completedLessons', []) is list && data.get('completedLessons', []).size() <= 500) &&
+             (data.get('completedLessons', []).size() == 0 || data.get('completedLessons', [])[0] is string) &&
+             (data.get('learningGoals', {}) is map && 
+              data.get('learningGoals', {}).size() <= 2 &&
+              data.get('learningGoals', {}).get('dailyVocabTarget', 0) is number &&
+              data.get('learningGoals', {}).get('focusTopics', []) is list &&
+              data.get('learningGoals', {}).get('focusTopics', []).size() <= 20 &&
+              (data.get('learningGoals', {}).get('focusTopics', []).size() == 0 || data.get('learningGoals', {}).get('focusTopics', [])[0] is string)) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if isSignedIn() && resource.data.id == request.auth.uid;
+      
+      allow create: if isSignedIn() && 
+                    isValidId(userId) && 
+                    userId == request.auth.uid && 
+                    isValidUser(incoming()) && 
+                    incoming().createdAt == request.time &&
+                    incoming().updatedAt == request.time;
+                    
+      allow update: if isSignedIn() && 
+                    isValidId(userId) && 
+                    userId == request.auth.uid && 
+                    isValidUser(incoming()) &&
+                    incoming().updatedAt == request.time &&
+                    incoming().createdAt == existing().createdAt &&
+                    incoming().id == existing().id &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'currentLevel', 'completedLessons', 'learningGoals', 'updatedAt']);
+                    
+      allow delete: if false;
+    }
+  }
+}

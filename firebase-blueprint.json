@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and progress",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The user's ID"
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name"
+        },
+        "currentLevel": {
+          "type": "string",
+          "description": "Current language level (e.g. A1, A2)"
+        },
+        "completedLessons": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of completed lesson IDs"
+        },
+        "learningGoals": {
+          "type": "object",
+          "properties": {
+            "dailyVocabTarget": { "type": "number", "description": "Daily vocabulary words target" },
+            "focusTopics": { "type": "array", "items": { "type": "string" }, "description": "Topics of focus, e.g. Grammar, Verbs" }
+          }
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles and language learning progress"
+    }
+  }
+}

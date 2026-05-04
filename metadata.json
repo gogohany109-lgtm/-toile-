@@ -1,0 +1,8 @@
+{
+  "name": "Étoile: تعلم الفرنسية بذكاء",
+  "description": "منصة شاملة لتعلم اللغة الفرنسية من الصفر وحتى الاحتراف مع مساعد ذكاء اصطناعي وتصحيح النطق.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
