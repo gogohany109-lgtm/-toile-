@@ -1,7 +1,8 @@
-import React from 'react';
-import { BookOpen, MessageCircle, Mic, ArrowLeft } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { BookOpen, MessageCircle, Mic, ArrowLeft, Target } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { motion } from 'motion/react';
+import { useAuth } from '../components/FirebaseProvider';
 
 interface DashboardProps {
   setCurrentTab: (tab: string) => void;
@@ -9,7 +10,17 @@ interface DashboardProps {
 }
 
 export function Dashboard({ setCurrentTab, setCurrentLesson }: DashboardProps) {
-  const nextLesson = curriculum[0]; // Assuming user is at the start
+  const { userData } = useAuth();
+  
+  const completedLessons = userData?.completedLessons || [];
+  
+  const nextLesson = useMemo(() => {
+    // Find the first lesson that is not completed
+    const incompleteLesson = curriculum.find(lesson => !completedLessons.includes(lesson.id));
+    return incompleteLesson || curriculum[0]; // Fallback to first if all completed
+  }, [completedLessons]);
+  
+  const progressPercentage = Math.round((completedLessons.length / curriculum.length) * 100) || 0;
 
   const handleLessonStart = () => {
     setCurrentLesson(nextLesson.id);
@@ -22,6 +33,24 @@ export function Dashboard({ setCurrentTab, setCurrentLesson }: DashboardProps) {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 md:space-y-8 mt-2 md:mt-6"
     >
+      {/* Progress Overview */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+         <div className="flex justify-between items-center mb-4">
+           <h4 className="text-lg font-serif text-white flex items-center gap-2">
+              <Target className="w-5 h-5 text-amber-500" />
+              <span>معدل التقدم العام</span>
+           </h4>
+           <span className="text-amber-500 font-bold">{progressPercentage}%</span>
+         </div>
+         <div className="w-full h-2 bg-[#0a0a0b] rounded-full overflow-hidden border border-white/5">
+           <div 
+             className="h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out"
+             style={{ width: `${progressPercentage}%` }}
+           />
+         </div>
+         <p className="text-slate-400 text-sm mt-3">لقد أتممت {completedLessons.length} من أصل {curriculum.length} دروس.</p>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-[#0f0f11] to-[#0a0a0b] rounded-3xl p-6 md:p-10 border border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden">
         {/* French Flag Decorative */}

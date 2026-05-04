@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowRight, Volume2, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowRight, Volume2, CheckCircle2, XCircle, CheckCircle } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
+import { useAuth } from '../components/FirebaseProvider';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 interface LessonViewProps {
   lessonId: string | null;
@@ -11,11 +14,14 @@ import { motion } from 'motion/react';
 
 export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
   const lesson = curriculum.find(l => l.id === lessonId);
+  const { user, userData } = useAuth();
   
   // Exercise states
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [blankAnswers, setBlankAnswers] = useState<Record<number, string>>({});
   const [matchingState, setMatchingState] = useState<Record<number, { selectedFr?: string, selectedAr?: string, matches: Record<string, string> }>>({});
+  
+  const [isCompleting, setIsCompleting] = useState(false);
 
   if (!lesson) {
     return (
@@ -62,6 +68,26 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
       
       return { ...prev, [exIndex]: newState };
     });
+  };
+
+  const isCompleted = userData?.completedLessons?.includes(lessonId) || false;
+
+  const handleCompleteLesson = async () => {
+    if (!user || isCompleted || !lessonId || isCompleting) return;
+    
+    setIsCompleting(true);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const updatedLessons = [...(userData?.completedLessons || []), lessonId];
+      await updateDoc(userRef, {
+        completedLessons: updatedLessons,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'users');
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   return (
@@ -246,7 +272,29 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
         )}
       </div>
 
-      <div className="flex justify-end pt-8 border-t border-white/10">
+      <div className="flex justify-between items-center pt-8 border-t border-white/10 flex-wrap gap-4">
+        <button
+          onClick={handleCompleteLesson}
+          disabled={isCompleted || isCompleting}
+          className={`px-8 py-4 rounded-full font-bold transition-all flex items-center gap-2 ${
+            isCompleted 
+              ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-default'
+              : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+          }`}
+        >
+          {isCompleted ? (
+            <>
+              <CheckCircle className="w-5 h-5" />
+              <span>اكتمل الدرس</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-5 h-5" />
+              <span>{isCompleting ? 'جاري الحفظ...' : 'تحديد كمكتمل'}</span>
+            </>
+          )}
+        </button>
+
         <button 
           onClick={() => setCurrentTab('chat')}
           className="bg-amber-600 hover:bg-amber-500 text-black px-8 py-4 rounded-full font-bold transition-all flex items-center gap-2"
