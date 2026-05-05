@@ -6,6 +6,7 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
+import { sounds } from '../lib/sounds';
 
 interface LessonViewProps {
   lessonId: string | null;
@@ -41,6 +42,13 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
 
   const handleMultipleChoice = (exIndex: number, answer: string) => {
     setSelectedAnswers(prev => ({ ...prev, [exIndex]: answer }));
+    
+    const ex = lesson.exercises[exIndex];
+    if (ex.type === 'multiple_choice' && ex.answer === answer) {
+      sounds.playMatchSuccess();
+    } else {
+      sounds.playSelect();
+    }
   };
 
   const handleBlankChange = (exIndex: number, value: string) => {
@@ -48,6 +56,7 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
   };
 
   const handleMatchingClick = (exIndex: number, text: string, type: 'fr' | 'ar', pairs: {fr: string, ar: string}[]) => {
+    sounds.playSelect();
     setMatchingState(prev => {
       const state = prev[exIndex] || { matches: {} };
       const newState = { ...state };
@@ -60,6 +69,7 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
         const pair = pairs.find(p => p.fr === newState.selectedFr && p.ar === newState.selectedAr);
         if (pair) {
           newState.matches[newState.selectedFr] = newState.selectedAr;
+          setTimeout(() => sounds.playMatchSuccess(), 50);
         }
         // Reset selection
         newState.selectedFr = undefined;
@@ -89,6 +99,7 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
         origin: { y: 0.6 },
         colors: ['#f59e0b', '#10b981', '#3b82f6', '#ef4444']
       });
+      sounds.playLessonComplete();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'users');
     } finally {
