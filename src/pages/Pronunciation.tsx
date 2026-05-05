@@ -22,7 +22,7 @@ export function Pronunciation() {
   const currentPhrase = PHRASES[currentIndex];
 
   // Web Speech API
-  const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   const [recognition, setRecognition] = useState<any>(null);
 
   useEffect(() => {

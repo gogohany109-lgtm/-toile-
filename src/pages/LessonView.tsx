@@ -4,13 +4,13 @@ import { curriculum } from '../data/curriculum';
 import { useAuth } from '../components/FirebaseProvider';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import confetti from 'canvas-confetti';
+import { motion } from 'motion/react';
 
 interface LessonViewProps {
   lessonId: string | null;
   setCurrentTab: (tab: string) => void;
 }
-
-import { motion } from 'motion/react';
 
 export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
   const lesson = curriculum.find(l => l.id === lessonId);
@@ -82,6 +82,12 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
       await updateDoc(userRef, {
         completedLessons: updatedLessons,
         updatedAt: serverTimestamp()
+      });
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#f59e0b', '#10b981', '#3b82f6', '#ef4444']
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'users');

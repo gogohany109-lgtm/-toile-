@@ -82,9 +82,15 @@ export function Curriculum({ setCurrentTab, setCurrentLesson }: CurriculumProps)
                       onClick={() => handleLessonStart(lesson.id)}
                     >
                       {isCompleted && (
-                        <div className="absolute top-4 left-4 text-green-500">
-                           <CheckCircle2 className="w-5 h-5" />
-                        </div>
+                        <motion.div 
+                           initial={{ scale: 0, opacity: 0 }}
+                           animate={{ scale: 1, opacity: 1 }}
+                           transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                           className="absolute top-4 left-4 bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,197,94,0.15)]"
+                        >
+                           <CheckCircle2 className="w-3.5 h-3.5" />
+                           <span className="text-xs font-bold uppercase tracking-widest">مكتمل</span>
+                        </motion.div>
                       )}
                       <div className={`w-12 h-12 flex items-center justify-center rounded-lg mb-4 transition-colors border ${
                         isCompleted
