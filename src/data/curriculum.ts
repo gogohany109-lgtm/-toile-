@@ -39,7 +39,7 @@ export const curriculum: Lesson[] = [
       },
       {
         type: 'fill_blanks',
-        text: "S'يل _____ plaît.",
+        text: "S'il _____ plaît.",
         answer: "vous",
         hint: 'من فضلك'
       },
