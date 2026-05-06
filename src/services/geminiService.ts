@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 
 // Initialize the Gemini AI client
 // The GEMINI_API_KEY is injected at runtime
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function chatWithAI(message: string, history: { role: string; text: string }[]) {
   try {

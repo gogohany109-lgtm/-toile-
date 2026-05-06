@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Curriculum } from './pages/Curriculum';
 import { LessonView } from './pages/LessonView';
 import { AIChat } from './pages/AIChat';
+import { Translator } from './pages/Translator';
 import { Pronunciation } from './pages/Pronunciation';
 import { Dictionary } from './pages/Dictionary';
 import { Profile } from './pages/Profile';
@@ -78,6 +79,9 @@ export default function App() {
       )}
       {currentTab === 'chat' && (
         <AIChat />
+      )}
+      {currentTab === 'translator' && (
+        <Translator />
       )}
       {currentTab === 'pronunciation' && (
         <Pronunciation />

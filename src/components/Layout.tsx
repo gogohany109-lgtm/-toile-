@@ -50,6 +50,7 @@ export function Layout({ children, currentTab, setCurrentTab }: LayoutProps) {
               {currentTab === 'dashboard' && <span className="italic">مرحباً {userData?.displayName?.split(' ')[0]}</span>}
               {currentTab === 'curriculum' && 'المنهج الدراسي'}
               {currentTab === 'chat' && 'تحدث مع Étoile'}
+              {currentTab === 'translator' && 'المترجم الفوري'}
               {currentTab === 'pronunciation' && 'مختبر النطق'}
               {currentTab === 'dictionary' && 'القاموس والأفعال'}
               {currentTab === 'profile' && 'أهدافي وملفي'}

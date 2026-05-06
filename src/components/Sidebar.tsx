@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BookOpen, MessageCircle, Mic, Star, BookA, Target } from 'lucide-react';
+import { Home, BookOpen, MessageCircle, Mic, Star, BookA, Target, Languages } from 'lucide-react';
 
 interface SidebarProps {
   currentTab: string;
@@ -11,6 +11,7 @@ export function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
     { id: 'dashboard', label: 'الرئيسية', icon: Home },
     { id: 'curriculum', label: 'الدروس', icon: BookOpen },
     { id: 'chat', label: 'ممارسة المحادثة', icon: MessageCircle },
+    { id: 'translator', label: 'المترجم الفوري', icon: Languages },
     { id: 'pronunciation', label: 'مختبر النطق', icon: Mic },
     { id: 'dictionary', label: 'القاموس والأفعال', icon: BookA },
     { id: 'profile', label: 'أهدافي وملفي', icon: Target },
