@@ -5,9 +5,8 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}),
-  databaseId: firebaseConfig.firestoreDatabaseId
-});
+  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+}, firebaseConfig.firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
 
 // Test connection
@@ -67,13 +66,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  
   if (errInfo.error.toLowerCase().includes('permission') || errInfo.error.toLowerCase().includes('missing or insufficient')) {
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
     throw new Error(JSON.stringify(errInfo));
   } else if (errInfo.error.toLowerCase().includes('offline')) {
-    console.warn("Skipping operation due to offline client mode.");
+    console.warn("Skipping operation due to offline client mode:", errInfo.error);
   } else {
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
     throw new Error(JSON.stringify(errInfo));
   }
 }
