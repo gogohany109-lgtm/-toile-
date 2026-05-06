@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2 } from 'lucide-react';
-import { chatWithAI } from '../services/geminiService';
+import { Send, User, Bot, Loader2, Languages } from 'lucide-react';
+import { chatWithAI, translateMessageToFrench, translateMessageToArabic } from '../services/geminiService';
 
 import { motion } from 'motion/react';
 
 export function AIChat() {
-  const [messages, setMessages] = useState<{role: 'user' | 'bot', text: string}[]>([
+  const [messages, setMessages] = useState<{role: 'user' | 'bot', text: string, translatedText?: string}[]>([
     { role: 'bot', text: "Bonjour ! Je m'appelle Étoile. Comment ça va aujourd'hui ? (مرحباً! اسمي إيتوال. كيف حالك اليوم؟)" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatingIds, setTranslatingIds] = useState<Record<number, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -18,19 +20,56 @@ export function AIChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isTranslating]);
+
+  const handleTranslateBot = async (index: number, text: string) => {
+    setTranslatingIds(prev => ({ ...prev, [index]: true }));
+    try {
+      const translated = await translateMessageToArabic(text);
+      setMessages(prev => {
+        const newMsg = [...prev];
+        newMsg[index].translatedText = translated;
+        return newMsg;
+      });
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setTranslatingIds(prev => ({ ...prev, [index]: false }));
+    }
+  };
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isTranslating) return;
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    const currentMessages = [...messages, { role: 'user' as const, text: userMessage }];
+    setMessages(currentMessages);
+    
+    // Check if the message contains Arabic characters
+    const hasArabic = /[\u0600-\u06FF]/.test(userMessage);
+    
+    let messageToSend = userMessage;
+
+    if (hasArabic) {
+      setIsTranslating(true);
+      try {
+        const translated = await translateMessageToFrench(userMessage);
+        messageToSend = translated;
+        currentMessages[currentMessages.length - 1].translatedText = translated;
+        setMessages([...currentMessages]);
+      } catch (err) {
+        console.error("Translation failed", err);
+      } finally {
+        setIsTranslating(false);
+      }
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await chatWithAI(userMessage, messages);
+      const response = await chatWithAI(messageToSend, currentMessages);
       setMessages(prev => [...prev, { role: 'bot', text: response }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'bot', text: 'حدث خطأ، يرجى المحاولة مرة أخرى.' }]);
@@ -64,24 +103,53 @@ export function AIChat() {
               {msg.role === 'user' ? <User className="w-4 h-4 md:w-5 md:h-5" /> : <Bot className="w-4 h-4 md:w-5 md:h-5" />}
             </div>
             
-            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-6 md:py-4 relative overflow-hidden ${msg.role === 'user' ? 'bg-amber-600 text-black rounded-tr-sm border border-amber-500/50' : 'bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm'}`}>
+            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-6 md:py-4 relative overflow-hidden flex flex-col gap-2 ${msg.role === 'user' ? 'bg-amber-600 text-black rounded-tr-sm border border-amber-500/50' : 'bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm'}`}>
               {msg.role === 'bot' && <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>}
-              {msg.role === 'bot' && <p className="text-[10px] text-amber-500/70 font-mono mb-1 md:mb-2 uppercase tracking-widest">AI: Étoile</p>}
+              {msg.role === 'bot' && (
+                <div className="flex justify-between items-start mb-1 md:mb-2">
+                  <p className="text-[10px] text-amber-500/70 font-mono uppercase tracking-widest">AI: Étoile</p>
+                  {!msg.translatedText && (
+                    <button 
+                      onClick={() => handleTranslateBot(idx, msg.text)}
+                      disabled={translatingIds[idx]}
+                      className="text-slate-500 hover:text-amber-500 transition-colors"
+                      title="ترجمة إلى العربية"
+                    >
+                      {translatingIds[idx] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                    </button>
+                  )}
+                </div>
+              )}
+              
               <p className={`whitespace-pre-wrap leading-relaxed text-sm md:text-base ${msg.role === 'bot' ? 'font-serif md:text-lg tracking-wide' : ''}`} dir="auto">
                 {msg.text}
               </p>
+              
+              {msg.translatedText && (
+                <div className="mt-2 pt-2 border-t border-black/10 flex flex-col gap-1">
+                  <div className="flex items-center gap-1 opacity-60">
+                    <Languages className="w-3 h-3" />
+                    <span className="text-[10px] uppercase font-bold tracking-wider">{msg.role === 'user' ? 'Traduction' : 'الترجمة'}</span>
+                  </div>
+                  <p className={`text-sm md:text-base leading-relaxed opacity-90 ${msg.role === 'user' ? 'font-serif' : 'font-sans'}`} dir={msg.role === 'user' ? 'ltr' : 'rtl'}>
+                    {msg.translatedText}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ))}
-        {isLoading && (
-          <div className="flex gap-2 md:gap-4">
-             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-               <Bot className="w-4 h-4 md:w-5 md:h-5 text-slate-400" />
+        {(isTranslating || isLoading) && (
+          <div className={`flex gap-2 md:gap-4 ${isTranslating ? 'flex-row-reverse opacity-70' : ''}`}>
+             <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isTranslating ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : 'bg-white/5 border border-white/10 text-slate-400'}`}>
+               {isTranslating ? <User className="w-4 h-4 md:w-5 md:h-5" /> : <Bot className="w-4 h-4 md:w-5 md:h-5 text-slate-400" />}
              </div>
-             <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 md:px-6 md:py-4 flex items-center gap-2 md:gap-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/50"></div>
-                <Loader2 className="w-4 h-4 md:w-5 md:h-5 text-amber-500 animate-spin" />
-                <span className="text-slate-400 text-[10px] md:text-xs font-mono uppercase tracking-widest">جاري التفكير...</span>
+             <div className={`rounded-2xl px-4 py-3 md:px-6 md:py-4 flex items-center gap-2 md:gap-3 relative overflow-hidden ${isTranslating ? 'bg-amber-600/50 text-black rounded-tr-sm border border-amber-500/30' : 'bg-white/5 border border-white/10 rounded-tl-sm'}`}>
+                {!isTranslating && <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/50"></div>}
+                <Loader2 className={`w-4 h-4 md:w-5 md:h-5 animate-spin ${isTranslating ? 'text-black/50' : 'text-amber-500'}`} />
+                <span className={`text-[10px] md:text-xs font-mono uppercase tracking-widest ${isTranslating ? 'text-black/60' : 'text-slate-400'}`}>
+                  {isTranslating ? 'جاري الترجمة...' : 'جاري التفكير...'}
+                </span>
              </div>
           </div>
         )}
@@ -95,15 +163,15 @@ export function AIChat() {
             dir="auto"
             type="text"
             className="flex-1 bg-[#0a0a0b] border border-white/10 rounded-full px-4 md:px-6 py-3 md:py-4 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-slate-200 pl-14 md:pl-16 placeholder:text-slate-500 text-sm md:text-base"
-            placeholder="اكتب رسالتك بالفرنسية..."
+            placeholder="اكتب رسالتك بالفرنسية (أو بالعربية للترجمة)..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
+            disabled={isLoading || isTranslating}
           />
           <button 
             type="submit"
-            disabled={!input.trim() || isLoading}
-            className={`absolute left-1 md:left-2 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${input.trim() && !isLoading ? 'bg-amber-600 text-black hover:bg-amber-500' : 'bg-white/5 text-slate-600 cursor-not-allowed'}`}
+            disabled={!input.trim() || isLoading || isTranslating}
+            className={`absolute left-1 md:left-2 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${input.trim() && !isLoading && !isTranslating ? 'bg-amber-600 text-black hover:bg-amber-500' : 'bg-white/5 text-slate-600 cursor-not-allowed'}`}
           >
             <Send className="w-4 h-4 md:w-5 md:h-5 rtl:-scale-x-100" />
           </button>

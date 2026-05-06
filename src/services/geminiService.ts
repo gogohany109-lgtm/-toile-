@@ -39,6 +39,32 @@ ${message}` : message;
   }
 }
 
+export async function translateMessageToFrench(message: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-preview',
+      contents: `ترجم النص التالي إلى اللغة الفرنسية. إذا كان النص بالفعل بالفرنسية، قم بإرجاعه كما هو. لا تضف أي شرح إضافي أو علامات اقتباس. النص: "${message}"`
+    });
+    return response.text?.trim() || message;
+  } catch (error) {
+    console.error('Error translating message:', error);
+    return message;
+  }
+}
+
+export async function translateMessageToArabic(message: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-preview',
+      contents: `ترجم النص التالي إلى اللغة العربية. إذا كان النص بالفعل بالعربية، قم بإرجاعه كما هو. لا تضف أي شرح إضافي أو علامات اقتباس. النص: "${message}"`
+    });
+    return response.text?.trim() || message;
+  } catch (error) {
+    console.error('Error translating message:', error);
+    return message;
+  }
+}
+
 export async function evaluatePronunciation(phrase: string, transcribedText: string) {
   try {
     const response = await ai.models.generateContent({
