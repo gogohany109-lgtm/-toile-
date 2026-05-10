@@ -4,12 +4,19 @@ import { GoogleGenAI } from '@google/genai';
 // The GEMINI_API_KEY is injected at runtime
 export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-export async function chatWithAI(message: string, history: { role: string; text: string }[]) {
+export async function chatWithAI(message: string, history: { role: string; text: string }[], personality: 'friendly' | 'formal' | 'playful' = 'friendly') {
   try {
+    const personalityPrompts = {
+      friendly: "أسلوبك دافئ، مشجع، وودود للغاية. استخدم لغة محفزة.",
+      formal: "أسلوبك مهني، دقيق، وجاد. ركز على القواعد اللغوية بشكل رسمي.",
+      playful: "أسلوبك مرح، مبهج، ومليء بالرموز التعبيرية. اجعل التعلم يبدو كلعبة."
+    };
+
     const chat = ai.chats.create({
       model: 'gemini-3.1-flash-lite-preview',
       config: {
-        systemInstruction: `أنت معلم لغة فرنسية لطيف ومتعاون. اسمك "Étoile". 
+        systemInstruction: `أنت معلم لغة فرنسية ذكي ومبدع. اسمك "Étoile" (النجمة). 
+        ${personalityPrompts[personality]}
         مهمتك هي مساعدة المستخدم على ممارسة اللغة الفرنسية.
         - إذا كتب المستخدم بالفرنسية، رد عليه بالفرنسية وصحح له أخطاءه بلطف إذا وجدت، مع شرح بسيط بالعربية عند الحاجة.
         - شجع المستخدم واطرح عليه أسئلة بسيطة ليستمر في المحادثة.

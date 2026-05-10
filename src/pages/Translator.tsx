@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Languages, ArrowRightLeft, Volume2, Copy, Check, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Languages, ArrowRightLeft, Volume2, Copy, Check, Loader2, X, RotateCcw, Mic, MicOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ai } from '../services/geminiService';
 
 export function Translator() {
@@ -9,6 +9,85 @@ export function Translator() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [sourceLang, setSourceLang] = useState<'ar' | 'fr'>('ar');
   const [copied, setCopied] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [history, setHistory] = useState<{id: number, input: string, output: string, source: 'ar' | 'fr', target: 'ar' | 'fr'}[]>([]);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInputText(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      if (recognitionRef.current) {
+        recognitionRef.current.lang = sourceLang === 'fr' ? 'fr-FR' : 'ar-SA';
+        setIsListening(true);
+        recognitionRef.current.start();
+      } else {
+        alert('خاصية الإملاء غير مدعومة في متصفحك.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    const hintDismissed = localStorage.getItem('translator-hint-dismissed');
+    if (!hintDismissed) {
+      setShowHint(true);
+    }
+    
+    // Load history
+    const savedHistory = localStorage.getItem('translation-history');
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to parse history', e);
+      }
+    }
+  }, []);
+
+  const dismissHint = () => {
+    localStorage.setItem('translator-hint-dismissed', 'true');
+    setShowHint(false);
+  };
+
+  const saveToHistory = (input: string, output: string, source: 'ar' | 'fr', target: 'ar' | 'fr') => {
+    if (!input.trim() || !output.trim()) return;
+    
+    setHistory(prev => {
+      // Avoid duplicate consecutive entries
+      if (prev.length > 0 && prev[0].input === input && prev[0].source === source) return prev;
+      
+      const newEntry = { id: Date.now(), input, output, source, target };
+      const updated = [newEntry, ...prev].slice(0, 5);
+      localStorage.setItem('translation-history', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const targetLang = sourceLang === 'ar' ? 'fr' : 'ar';
 
@@ -34,7 +113,9 @@ export function Translator() {
         model: 'gemini-3.1-flash-lite-preview',
         contents: prompt
       });
-      setOutputText(response.text?.trim() || '');
+      const translated = response.text?.trim() || '';
+      setOutputText(translated);
+      saveToHistory(inputText, translated, sourceLang, targetLang);
     } catch (error) {
       console.error('Translation error:', error);
       setOutputText('حدث خطأ أثناء الترجمة. يرجى المحاولة مرة أخرى.');
@@ -87,6 +168,34 @@ export function Translator() {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto space-y-6"
     >
+      <AnimatePresence>
+        {showHint && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-amber-500/10 border border-amber-500/20 rounded-2xl overflow-hidden"
+          >
+            <div className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 text-sm text-amber-200/90 leading-relaxed">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                  <ArrowRightLeft className="w-5 h-5 text-amber-500" />
+                </div>
+                <p>
+                  <span className="font-bold text-amber-500">نصيحة ذكية:</span> استخدم زر "التبديل" (Swap) لتدريب نفسك على صياغة الجمل في كلا الاتجاهين، ولا تنسَ النقر على أيقونة السماعة لسماع النطق البشري، فهي سر تحسين مهارة الاستماع والنطق لديك!
+                </p>
+              </div>
+              <button 
+                onClick={dismissHint}
+                className="text-amber-500/50 hover:text-amber-500 p-2 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
@@ -131,15 +240,24 @@ export function Translator() {
             
             <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-slate-500">
               <span className="text-xs font-mono">{inputText.length} حرف</span>
-              {inputText && (
-                <button 
-                  onClick={() => speakText(inputText, sourceLang)}
-                  className="p-2 hover:bg-white/10 hover:text-amber-500 rounded-lg transition-colors"
-                  title="استماع"
+              <div className="flex gap-2">
+                <button
+                  onClick={toggleListening}
+                  className={`p-2 rounded-lg transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'hover:bg-white/10 hover:text-amber-500'}`}
+                  title={isListening ? 'ايقاف الاستماع' : 'إملاء صوتي'}
                 >
-                  <Volume2 className="w-5 h-5" />
+                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
-              )}
+                {inputText && (
+                  <button 
+                    onClick={() => speakText(inputText, sourceLang)}
+                    className="p-2 hover:bg-white/10 hover:text-amber-500 rounded-lg transition-colors"
+                    title="استماع"
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -184,6 +302,45 @@ export function Translator() {
           </div>
         </div>
       </div>
+
+      {/* Translation History */}
+      <AnimatePresence>
+        {history.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/5 border border-white/10 rounded-2xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+              <h4 className="text-lg font-serif text-white">السجل الأخير</h4>
+            </div>
+
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {history.map((item) => (
+                <div 
+                  key={item.id}
+                  className="bg-[#0a0a0b] border border-white/5 rounded-xl p-4 flex items-center justify-between group hover:border-amber-500/30 transition-all"
+                >
+                  <div className="flex flex-col gap-1 flex-1">
+                    <p className="text-slate-500 text-xs" dir={item.source === 'ar' ? 'rtl' : 'ltr'}>{item.input}</p>
+                    <p className="text-white text-sm font-medium" dir={item.target === 'ar' ? 'rtl' : 'ltr'}>{item.output}</p>
+                  </div>
+                  <button
+                    onClick={() => speakText(item.output, item.target)}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-amber-500/20 hover:text-amber-500 transition-all"
+                    title="استماع"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

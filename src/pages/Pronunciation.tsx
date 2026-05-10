@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, Square, RefreshCcw, CheckCircle2, PlayCircle, Loader2 } from 'lucide-react';
 import { evaluatePronunciation } from '../services/geminiService';
+import { useAuth } from '../components/FirebaseProvider';
+import { db } from '../lib/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const PHRASES = [
   { fr: "Bonjour, comment allez-vous ?", ar: "مرحباً، كيف حالك؟" },
@@ -13,6 +16,7 @@ const PHRASES = [
 import { motion } from 'motion/react';
 
 export function Pronunciation() {
+  const { user, userData } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -97,6 +101,19 @@ export function Pronunciation() {
     try {
       const result = await evaluatePronunciation(currentPhrase.fr, textToEvaluate);
       setFeedback(result);
+      
+      if (user) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const newPoints = (userData?.points || 0) + 5;
+          await updateDoc(userRef, {
+            points: newPoints,
+            updatedAt: serverTimestamp()
+          });
+        } catch(err) {
+          console.error("Error updating points", err);
+        }
+      }
     } catch (error) {
       setFeedback('تعذر جلب التقييم حالياً.');
     } finally {

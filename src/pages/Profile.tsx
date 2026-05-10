@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Target, Save, Loader2, BookOpen } from 'lucide-react';
+import { Target, Save, Loader2, BookOpen, Edit2, Check } from 'lucide-react';
 import { useAuth } from '../components/FirebaseProvider';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -9,10 +9,12 @@ export function Profile() {
   const { user, userData } = useAuth();
   const [dailyVocabTarget, setDailyVocabTarget] = useState(10);
   const [focusTopics, setFocusTopics] = useState<string[]>([]);
+  const [reminders, setReminders] = useState<{ time: string; activity: string }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-
+  
   const TOPIC_OPTIONS = [
     'القواعد (Grammar)',
     'الأفعال (Verbs)',
@@ -22,12 +24,28 @@ export function Profile() {
     'المحادثة اليومية (Daily UI)'
   ];
 
+  // In `useEffect` for userData:
   useEffect(() => {
     if (userData?.learningGoals) {
       setDailyVocabTarget(userData.learningGoals.dailyVocabTarget || 10);
       setFocusTopics(userData.learningGoals.focusTopics || []);
+      setReminders(userData.learningGoals.reminders || []);
     }
   }, [userData]);
+  
+  const addReminder = () => {
+     setReminders([...reminders, { time: '09:00', activity: 'vocabulary' }]);
+  };
+  
+  const updateReminder = (index: number, field: string, value: string) => {
+      const newReminders = [...reminders];
+      newReminders[index] = { ...newReminders[index], [field]: value };
+      setReminders(newReminders);
+  };
+  
+  const removeReminder = (index: number) => {
+      setReminders(reminders.filter((_, i) => i !== index));
+  };
 
   const toggleTopic = (topic: string) => {
     if (focusTopics.includes(topic)) {
@@ -53,11 +71,13 @@ export function Profile() {
       await updateDoc(userRef, {
         learningGoals: {
           dailyVocabTarget,
-          focusTopics
+          focusTopics,
+          reminders
         },
         updatedAt: serverTimestamp()
       });
       setSuccessMsg('تم حفظ الأهداف بنجاح!');
+      setIsEditingTarget(false);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {
       setErrorMsg('حدث خطأ أثناء حفظ الأهداف. يرجى المحاولة مرة أخرى.');
@@ -65,6 +85,23 @@ export function Profile() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const BADGE_MAP: Record<string, { icon: string, color: string, desc: string }> = {
+    'البداية الموفقة': { icon: '🌱', color: 'text-green-500', desc: 'أكملت أول درس لك بنجاح!' },
+    'متعلم الأسبوع': { icon: '🔥', color: 'text-orange-500', desc: 'أكملت 5 دروس في أسبوع واحد.' },
+    'جامع الكلمات': { icon: '📚', color: 'text-blue-500', desc: 'تعلمت أكثر من 20 مفردة جديدة.' },
+    'خبير المستوى A1': { icon: '🥇', color: 'text-amber-500', desc: 'أتقنت جميع دروس المستوى المبتدئ A1.' },
+    'خبير المستوى A2': { icon: '🥈', color: 'text-slate-400', desc: 'أتقنت جميع دروس المستوى المبتدئ A2.' },
+    'خبير المستوى B1': { icon: '🥉', color: 'text-orange-300', desc: 'أتقنت جميع دروس المستوى المتوسط B1.' },
+    'خبير المستوى B2': { icon: '💎', color: 'text-cyan-400', desc: 'أتقنت جميع دروس المستوى المتوسط B2.' },
+    'خبير المستوى C1': { icon: '👑', color: 'text-purple-500', desc: 'أتقنت جميع دروس المستوى المتقدم C1.' },
+    'خبير المستوى C2': { icon: '🎩', color: 'text-slate-100', desc: 'أتقنت جميع دروس المستوى المتقدم C2.' },
+    'صديق الروبوت': { icon: '🤖', color: 'text-cyan-500', desc: 'بدأت أول محادثة لك مع المساعد الذكي Étoile.' },
+    'مُتقن المستويات': { icon: '🎓', color: 'text-indigo-400', desc: 'أتممت عدداً كبيراً من الدروس في رحلتك الممتعة.' },
+    'خبير الأفعال': { icon: '⚡', color: 'text-yellow-400', desc: 'أظهرت تفوقاً ملحوظاً في تصريف واستخدام الأفعال الفرنسية.' },
+    'متحدث طليق': { icon: '🗣️', color: 'text-pink-400', desc: 'تفاعلت بشكل مكثف ومتقدم مع المساعد الذكي Étoile.' },
+    'مواظب يومي': { icon: '📅', color: 'text-teal-400', desc: 'حققت هدفك اليومي للمفردات بانتظام.' },
   };
 
   return (
@@ -85,25 +122,63 @@ export function Profile() {
            </div>
         </div>
 
+        {/* Gamification Summary */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+            <span className="text-3xl mb-2">⭐</span>
+            <span className="text-2xl font-mono font-bold text-amber-500">{userData?.points || 0}</span>
+            <span className="text-sm text-slate-400">إجمالي النقاط</span>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+            <span className="text-3xl mb-2">🏆</span>
+            <span className="text-2xl font-mono font-bold text-amber-500">{userData?.badges?.length || 0}</span>
+            <span className="text-sm text-slate-400">الأوسمة المكتسبة</span>
+          </div>
+        </div>
+
         <div className="space-y-8">
           
           {/* Target Vocabulary */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-             <div className="flex items-center gap-3 mb-4">
-                <BookOpen className="w-5 h-5 text-amber-500" />
-                <h3 className="text-xl font-bold text-white">الهدف اليومي للمفردات</h3>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+             {isEditingTarget && (
+               <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 animate-pulse" />
+             )}
+             <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                   <BookOpen className="w-5 h-5 text-amber-500" />
+                   <h3 className="text-xl font-bold text-white">الهدف اليومي للمفردات</h3>
+                </div>
+                {!isEditingTarget ? (
+                  <button 
+                    onClick={() => setIsEditingTarget(true)}
+                    className="flex items-center gap-2 text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>تعديل</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 text-xs font-bold bg-amber-500 text-black px-3 py-1 rounded-lg hover:bg-amber-400 transition-colors"
+                  >
+                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                    <span>حفظ</span>
+                  </button>
+                )}
              </div>
              <p className="text-slate-400 mb-6 text-sm">كم كلمة جديدة ترغب في تعلمها يومياً؟</p>
              
-             <div className="flex items-center gap-4">
+             <div className={`flex items-center gap-4 transition-opacity ${!isEditingTarget ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'}`}>
                 <input 
                   type="range" 
                   min="5" 
                   max="50" 
                   step="5"
                   value={dailyVocabTarget}
+                  disabled={!isEditingTarget}
                   onChange={(e) => setDailyVocabTarget(parseInt(e.target.value))}
-                  className="flex-1 accent-amber-500"
+                  className="flex-1 accent-amber-500 cursor-pointer disabled:cursor-not-allowed"
                 />
                 <span className="w-16 text-center text-2xl font-serif text-white drop-shadow-md">
                    {dailyVocabTarget}
@@ -137,6 +212,68 @@ export function Profile() {
                  );
                })}
              </div>
+          </div>
+
+          {/* Daily Reminders */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+             <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">⏰</span>
+                <h3 className="text-xl font-bold text-white">تذكيرات الممارسة اليومية</h3>
+             </div>
+             <p className="text-slate-400 mb-6 text-sm">قم بضبط وقت ممارسة يومي لتصلك تذكيرات بالمتابعة.</p>
+             
+             <div className="space-y-4">
+               {reminders.map((reminder, index) => (
+                   <div key={index} className="flex items-center gap-4 bg-[#0a0a0b] p-4 rounded-xl border border-white/5">
+                      <input 
+                        type="time" 
+                        value={reminder.time}
+                        onChange={(e) => updateReminder(index, 'time', e.target.value)}
+                        className="bg-transparent text-white font-mono p-2 rounded border border-white/10" 
+                      />
+                      <select 
+                        value={reminder.activity}
+                        onChange={(e) => updateReminder(index, 'activity', e.target.value)}
+                        className="bg-transparent text-white p-2 rounded border border-white/10 flex-1"
+                      >
+                        <option value="vocabulary">مراجعة المفردات</option>
+                        <option value="grammar">ممارسة القواعد</option>
+                        <option value="speaking">تمارين التحدث</option>
+                      </select>
+                      <button onClick={() => removeReminder(index)} className="text-red-500 font-bold p-2 hover:bg-red-500/10 rounded-lg">حذف</button>
+                   </div>
+               ))}
+               <button onClick={addReminder} className="w-full text-amber-500 font-bold p-3 hover:bg-amber-500/10 rounded-xl border border-dashed border-amber-500/30">+ إضافة تذكير جديد</button>
+             </div>
+          </div>
+
+          {/* Badges & Achievements */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+             <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">🏆</span>
+                <h3 className="text-xl font-bold text-white">الأوسمة والإنجازات</h3>
+             </div>
+             
+             {userData?.badges && userData.badges.length > 0 ? (
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 {userData.badges.map((badgeName: string, i: number) => {
+                   const badge = BADGE_MAP[badgeName] || { icon: '🏅', color: 'text-amber-500', desc: 'إنجاز رائع في رحلتك!' };
+                   return (
+                     <div key={i} className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors group">
+                       <div className="text-3xl group-hover:scale-110 transition-transform">{badge.icon}</div>
+                       <div>
+                         <h4 className={`font-bold ${badge.color}`}>{badgeName}</h4>
+                         <p className="text-xs text-slate-500 mt-1">{badge.desc}</p>
+                       </div>
+                     </div>
+                   );
+                 })}
+               </div>
+             ) : (
+               <div className="text-center py-10 border border-dashed border-white/10 rounded-xl">
+                 <p className="text-slate-500 italic">لم تكتسب أي أوسمة بعد. ابدأ بأول درس لك!</p>
+               </div>
+             )}
           </div>
 
           {/* Messages */}

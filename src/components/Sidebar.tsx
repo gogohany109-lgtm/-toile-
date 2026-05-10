@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BookOpen, MessageCircle, Mic, Star, BookA, Target, Languages } from 'lucide-react';
+import { Home, BookOpen, MessageCircle, Mic, Star, BookA, Target, Languages, Compass, MapPin, Gamepad2, GraduationCap } from 'lucide-react';
 
 interface SidebarProps {
   currentTab: string;
@@ -10,7 +10,11 @@ export function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'الرئيسية', icon: Home },
     { id: 'curriculum', label: 'الدروس', icon: BookOpen },
+    { id: 'learning_paths', label: 'مسارات التعلم', icon: Compass },
     { id: 'chat', label: 'ممارسة المحادثة', icon: MessageCircle },
+    { id: 'culture', label: 'الثقافة الفرنسية', icon: MapPin },
+    { id: 'games', label: 'الألعاب والمسابقات', icon: Gamepad2 },
+    { id: 'grammar', label: 'قواعد اللغة', icon: GraduationCap },
     { id: 'translator', label: 'المترجم الفوري', icon: Languages },
     { id: 'pronunciation', label: 'مختبر النطق', icon: Mic },
     { id: 'dictionary', label: 'القاموس والأفعال', icon: BookA },

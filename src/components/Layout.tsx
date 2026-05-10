@@ -53,6 +53,9 @@ export function Layout({ children, currentTab, setCurrentTab }: LayoutProps) {
               {currentTab === 'translator' && 'المترجم الفوري'}
               {currentTab === 'pronunciation' && 'مختبر النطق'}
               {currentTab === 'dictionary' && 'القاموس والأفعال'}
+              {currentTab === 'learning_paths' && 'مسارات التعلم المخصصة'}
+              {currentTab === 'culture' && 'الثقافة والتقاليد'}
+              {currentTab === 'games' && 'الألعاب والاختبارات'}
               {currentTab === 'profile' && 'أهدافي وملفي'}
             </h2>
           </div>
@@ -60,6 +63,12 @@ export function Layout({ children, currentTab, setCurrentTab }: LayoutProps) {
             <div className="hidden sm:flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
               <span className="text-sm font-medium text-slate-400">المستوى:</span>
               <span className="text-sm font-bold text-amber-500 uppercase">{userData?.currentLevel || 'A1'}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 bg-amber-500/10 px-3 md:px-4 py-1 md:py-2 rounded-full border border-amber-500/20">
+              <span className="text-amber-500">⭐</span>
+              <span className="text-sm font-bold text-white">{userData?.points || 0}</span>
+              <span className="text-xs text-amber-500/70 hidden md:block">نقطة</span>
             </div>
             
             <button onClick={logOut} className="text-xs text-slate-500 hover:text-red-400 uppercase tracking-widest transition-colors font-mono hidden sm:block">

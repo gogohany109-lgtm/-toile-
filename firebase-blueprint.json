@@ -33,6 +33,15 @@
             "focusTopics": { "type": "array", "items": { "type": "string" }, "description": "Topics of focus, e.g. Grammar, Verbs" }
           }
         },
+        "points": {
+          "type": "number",
+          "description": "User's gamification points"
+        },
+        "badges": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of earned badge IDs"
+        },
         "createdAt": {
           "type": "number",
           "description": "Creation timestamp"

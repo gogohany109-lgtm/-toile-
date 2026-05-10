@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { ReminderManager } from './components/ReminderManager';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Curriculum } from './pages/Curriculum';
@@ -13,6 +14,10 @@ import { Translator } from './pages/Translator';
 import { Pronunciation } from './pages/Pronunciation';
 import { Dictionary } from './pages/Dictionary';
 import { Profile } from './pages/Profile';
+import { LearningPaths } from './pages/LearningPaths';
+import { Culture } from './pages/Culture';
+import { Games } from './pages/Games';
+import { Grammar } from './pages/Grammar';
 import { useAuth } from './components/FirebaseProvider';
 import { Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -68,30 +73,52 @@ export default function App() {
 
   return (
     <Layout currentTab={currentTab} setCurrentTab={setCurrentTab}>
-      {currentTab === 'dashboard' && (
-        <Dashboard setCurrentTab={setCurrentTab} setCurrentLesson={setCurrentLesson} />
-      )}
-      {currentTab === 'curriculum' && (
-        <Curriculum setCurrentTab={setCurrentTab} setCurrentLesson={setCurrentLesson} />
-      )}
-      {currentTab === 'lesson_view' && (
-        <LessonView lessonId={currentLesson} setCurrentTab={setCurrentTab} />
-      )}
-      {currentTab === 'chat' && (
-        <AIChat />
-      )}
-      {currentTab === 'translator' && (
-        <Translator />
-      )}
-      {currentTab === 'pronunciation' && (
-        <Pronunciation />
-      )}
-      {currentTab === 'dictionary' && (
-        <Dictionary />
-      )}
-      {currentTab === 'profile' && (
-        <Profile />
-      )}
+      <ReminderManager />
+      <motion.div
+        key={currentTab}
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -10 }}
+        transition={{ duration: 0.2 }}
+        className="min-h-full"
+      >
+        {currentTab === 'dashboard' && (
+          <Dashboard setCurrentTab={setCurrentTab} setCurrentLesson={setCurrentLesson} />
+        )}
+        {currentTab === 'curriculum' && (
+          <Curriculum setCurrentTab={setCurrentTab} setCurrentLesson={setCurrentLesson} />
+        )}
+        {currentTab === 'lesson_view' && (
+          <LessonView lessonId={currentLesson} setCurrentTab={setCurrentTab} />
+        )}
+        {currentTab === 'chat' && (
+          <AIChat />
+        )}
+        {currentTab === 'translator' && (
+          <Translator />
+        )}
+        {currentTab === 'pronunciation' && (
+          <Pronunciation />
+        )}
+        {currentTab === 'dictionary' && (
+          <Dictionary />
+        )}
+        {currentTab === 'learning_paths' && (
+          <LearningPaths setCurrentTab={setCurrentTab} setCurrentLesson={setCurrentLesson} />
+        )}
+        {currentTab === 'culture' && (
+          <Culture />
+        )}
+        {currentTab === 'games' && (
+          <Games />
+        )}
+        {currentTab === 'grammar' && (
+          <Grammar />
+        )}
+        {currentTab === 'profile' && (
+          <Profile />
+        )}
+      </motion.div>
     </Layout>
   );
 }

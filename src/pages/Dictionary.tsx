@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Search, Book, Library, Loader2, PlayCircle, BookA } from 'lucide-react';
 import { lookupDictionaryWord } from '../services/geminiService';
@@ -72,18 +72,33 @@ export function Dictionary() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  useEffect(() => {
+    const saved = localStorage.getItem('recentSearches');
+    if (saved) setRecentSearches(JSON.parse(saved));
+  }, []);
+
+  const addToRecent = (word: string) => {
+    const updated = [word, ...recentSearches.filter(w => w !== word)].slice(0, 5);
+    setRecentSearches(updated);
+    localStorage.setItem('recentSearches', JSON.stringify(updated));
+  };
+
+  const handleSearch = async (e: React.FormEvent, query?: string) => {
+    if (e) e.preventDefault();
+    const q = query || searchQuery.trim();
+    if (!q) return;
     
+    setSearchQuery(q);
     setIsLoading(true);
     setError('');
     setResult(null);
 
-    const data = await lookupDictionaryWord(searchQuery.trim());
+    const data = await lookupDictionaryWord(q);
     if (data) {
       setResult(data);
+      addToRecent(q);
     } else {
       setError('تعذر العثور على الكلمة. تأكد من صحة الكتابة، أو حاول مرة أخرى.');
     }
@@ -161,6 +176,19 @@ export function Dictionary() {
               <div className="bg-red-500/5 border border-red-500/20 text-red-400 p-4 rounded-xl text-center">
                 {error}
               </div>
+            )}
+            
+            {!result && !isLoading && recentSearches.length > 0 && (
+                <div className="mt-8">
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">عمليات البحث الأخيرة</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {recentSearches.map(word => (
+                            <button key={word} onClick={() => handleSearch(null as any, word)} className="px-4 py-2 bg-white/5 hover:bg-amber-500/20 text-slate-300 hover:text-amber-500 rounded-xl border border-white/5 hover:border-amber-500/30 transition-all font-serif italic text-lg">
+                                {word}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             )}
 
             {result && !isLoading && (

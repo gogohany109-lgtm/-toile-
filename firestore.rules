@@ -29,6 +29,8 @@ service cloud.firestore {
               data.get('learningGoals', {}).get('focusTopics', []) is list &&
               data.get('learningGoals', {}).get('focusTopics', []).size() <= 20 &&
               (data.get('learningGoals', {}).get('focusTopics', []).size() == 0 || data.get('learningGoals', {}).get('focusTopics', [])[0] is string)) &&
+             (data.get('points', 0) is number) &&
+             (data.get('badges', []) is list && data.get('badges', []).size() <= 100 && (data.get('badges', []).size() == 0 || data.get('badges', [])[0] is string)) &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp;
     }
@@ -51,7 +53,7 @@ service cloud.firestore {
                     incoming().updatedAt == request.time &&
                     incoming().createdAt == existing().createdAt &&
                     incoming().id == existing().id &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'currentLevel', 'completedLessons', 'learningGoals', 'updatedAt']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'currentLevel', 'completedLessons', 'learningGoals', 'points', 'badges', 'updatedAt']);
                     
       allow delete: if false;
     }
