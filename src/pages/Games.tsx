@@ -53,6 +53,14 @@ export function Games() {
                 onClick={() => handleStartGame('flashcard-quiz')}
               />
               <GameCard 
+                id="memory-match"
+                title="تطابق الذاكرة"
+                description="طابق الكلمات الفرنسية مع ترجمتها العربية في أقل وقت ممكن لتقوية الذاكرة البصرية واللغوية."
+                icon={<ArrowLeftRight className="w-8 h-8 text-rose-500" />}
+                color="bg-rose-500"
+                onClick={() => handleStartGame('memory-match')}
+              />
+              <GameCard 
                 id="sentence-builder"
                 title="باني الجمل"
                 description="رتب الكلمات المبعثرة لتكوين جمل فرنسية صحيحة نحوياً وتدرب على تركيب الجمل."
@@ -134,6 +142,7 @@ export function Games() {
           >
             {activeGame === 'flashcard-quiz' && <FlashcardQuizGame difficulty={selectedDifficulty} onExit={() => setActiveGame(null)} />}
             {activeGame === 'sentence-builder' && <SentenceBuilderGame difficulty={selectedDifficulty} onExit={() => setActiveGame(null)} />}
+            {activeGame === 'memory-match' && <MemoryMatchGame difficulty={selectedDifficulty} onExit={() => setActiveGame(null)} />}
           </motion.div>
         )}
       </AnimatePresence>
@@ -431,6 +440,166 @@ function SentenceBuilderGame({ difficulty, onExit }: { difficulty: Difficulty, o
             <span>تحقق من الإجابة</span>
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MemoryMatchGame({ difficulty, onExit }: { difficulty: Difficulty, onExit: () => void }) {
+  const { user } = useAuth();
+  const [cards, setCards] = useState<{id: string, text: string, pairId: string, isFlipped: boolean, isMatched: boolean, type: 'fr' | 'ar'}[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [moves, setMoves] = useState(0);
+  const [matches, setMatches] = useState(0);
+  const [gameState, setGameState] = useState<'playing' | 'gameover'>('playing');
+
+  const config = useMemo(() => {
+    switch (difficulty) {
+      case 'easy': return { pairsCount: 4, multiplier: 1 };
+      case 'medium': return { pairsCount: 6, multiplier: 2 };
+      case 'hard': return { pairsCount: 9, multiplier: 3 };
+      default: return { pairsCount: 4, multiplier: 1 };
+    }
+  }, [difficulty]);
+
+  useEffect(() => {
+    const vocab = curriculum.flatMap(l => l.vocabulary).sort(() => Math.random() - 0.5).slice(0, config.pairsCount);
+    
+    let gameCards: any[] = [];
+    vocab.forEach((v, i) => {
+      const pairId = `pair-${i}`;
+      gameCards.push({ id: `${pairId}-fr`, text: v.fr, pairId, isFlipped: false, isMatched: false, type: 'fr' });
+      gameCards.push({ id: `${pairId}-ar`, text: v.ar, pairId, isFlipped: false, isMatched: false, type: 'ar' });
+    });
+
+    setCards(gameCards.sort(() => Math.random() - 0.5));
+    setSelected([]);
+    setMoves(0);
+    setMatches(0);
+    setGameState('playing');
+  }, [config]);
+
+  const handleCardClick = (index: number) => {
+    if (cards[index].isFlipped || cards[index].isMatched || selected.length === 2) return;
+
+    setCards(prev => {
+      const next = [...prev];
+      next[index].isFlipped = true;
+      return next;
+    });
+    
+    const newSelected = [...selected, index];
+    setSelected(newSelected);
+
+    if (newSelected.length === 2) {
+      setMoves(prev => prev + 1);
+      const [idx1, idx2] = newSelected;
+      
+      const card1 = cards[idx1];
+      const card2 = cards[idx2 === index ? idx2 : index]; // Ensure we get the latest state or just use index
+
+      if (cards[idx1].pairId === cards[index].pairId) {
+        // Match!
+        setTimeout(() => {
+          setCards(prev => {
+            const next = [...prev];
+            next[idx1].isMatched = true;
+            next[index].isMatched = true;
+            return next;
+          });
+          setSelected([]);
+          setMatches(prev => {
+            const next = prev + 1;
+            if (next === config.pairsCount) {
+              setGameState('gameover');
+              if (user) {
+                updateDoc(doc(db, 'users', user.uid), {
+                  points: increment(config.pairsCount * 10 * config.multiplier),
+                  updatedAt: serverTimestamp()
+                }).catch(console.error);
+              }
+            }
+            return next;
+          });
+        }, 500);
+      } else {
+        // No match
+        setTimeout(() => {
+          setCards(prev => {
+            const next = [...prev];
+            next[idx1].isFlipped = false;
+            next[index].isFlipped = false;
+            return next;
+          });
+          setSelected([]);
+        }, 1000);
+      }
+    }
+  };
+
+  if (gameState === 'gameover') {
+    return (
+      <div className="bg-[#0f0f11] border border-white/5 rounded-3xl p-12 text-center space-y-8 shadow-2xl">
+        <Trophy className="w-20 h-20 text-rose-500 mx-auto mb-4" />
+        <div>
+          <h2 className="text-4xl font-serif text-white mb-2">تطابق مذهل!</h2>
+          <p className="text-slate-400">لقد أكملت المهمة في {moves} محاولات.</p>
+        </div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="bg-rose-500/10 px-6 py-3 rounded-full border border-rose-500/20">
+            <span className="text-rose-500 font-bold">+{config.pairsCount * 10 * config.multiplier} نقطة تمت إضافتها</span>
+          </div>
+          <button onClick={onExit} className="bg-white text-black px-8 py-3 rounded-xl font-bold">العودة للألعاب</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center bg-white/5 p-6 rounded-3xl border border-white/10">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
+            <Timer className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-none mb-1">المحاولات</p>
+            <p className="text-2xl font-serif text-white leading-none">{moves}</p>
+          </div>
+        </div>
+        <div className="text-center flex-1">
+           <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-none mb-1">التطابق</p>
+           <p className="text-2xl font-serif text-amber-500 leading-none">{matches} / {config.pairsCount}</p>
+        </div>
+        <button onClick={onExit} className="p-2 text-slate-500 hover:text-white transition-colors">
+          <Gamepad2 className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className={`grid gap-4 ${difficulty === 'hard' ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2 sm:grid-cols-4'}`}>
+        {cards.map((card, index) => (
+          <div 
+            key={card.id}
+            onClick={() => handleCardClick(index)}
+            className={`aspect-square sm:aspect-video rounded-2xl border-2 cursor-pointer transition-all duration-500 preserve-3d flex items-center justify-center text-center p-2 sm:p-4 ${
+              card.isFlipped || card.isMatched 
+                ? 'bg-amber-500/10 border-amber-500/50' 
+                : 'bg-white/5 border-white/10 hover:border-white/20'
+            }`}
+             style={{ transformStyle: 'preserve-3d', transform: card.isFlipped || card.isMatched ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center backface-hidden" style={{ backfaceVisibility: 'hidden' }}>
+               <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                 <span className="text-slate-700 font-bold">?</span>
+               </div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center backface-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+               <p className={`font-serif text-sm sm:text-base ${card.type === 'fr' ? 'text-white italic' : 'text-amber-500'}`}>
+                 {card.text}
+               </p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -236,15 +236,18 @@ export function AIChat() {
             </div>
 
             {/* Color Theme Selector */}
-            <div className="flex items-center gap-1.5 p-1.5 bg-white/5 rounded-xl border border-white/10 ml-auto md:ml-4">
-               {(['amber', 'indigo', 'emerald', 'rose'] as const).map((color) => (
-                 <button
-                   key={color}
-                   onClick={() => changeTheme(color)}
-                   className={`w-4 h-4 rounded-full transition-all ${colors[color].bg} ${themeColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0f0f11] scale-110' : 'opacity-40 hover:opacity-100'}`}
-                   title={color}
-                 />
-               ))}
+            <div className="flex items-center gap-2 ml-auto md:ml-4">
+              <span className="text-[10px] text-slate-500 uppercase font-bold hidden sm:inline">سمة المحادثة</span>
+              <div className="flex items-center gap-1.5 p-1.5 bg-white/5 rounded-xl border border-white/10">
+                {(['amber', 'indigo', 'emerald', 'rose'] as const).map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => changeTheme(color)}
+                    className={`w-4 h-4 rounded-full transition-all ${colors[color].bg} ${themeColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0f0f11] scale-110' : 'opacity-40 hover:opacity-100'}`}
+                    title={color}
+                  />
+                ))}
+              </div>
             </div>
          </div>
 
@@ -282,7 +285,7 @@ export function AIChat() {
                   <Languages className={`w-4 h-4 ${theme.text}`} />
                 </div>
                 <p>
-                  <span className={`font-bold ${theme.text}`}>نصيحة:</span> يمكنك التحدث بالفرنسية مباشرة لتحسين نطقك، أو الكتابة بالعربية وسأقوم بترجمتها لك آلياً!
+                  <span className={`font-bold ${theme.text}`}>نصيحة:</span> اضغط على الميكروفون للتحدث بالفرنسية، أو اختر لوناً جديداً للمحادثة من شريط السمات في الأعلى!
                 </p>
               </div>
               <button 

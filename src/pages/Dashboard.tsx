@@ -22,6 +22,21 @@ export function Dashboard({ setCurrentTab, setCurrentLesson }: DashboardProps) {
   
   const progressPercentage = Math.round((completedLessons.length / curriculum.length) * 100) || 0;
   
+  const lessonsProgress = userData?.lessonsProgress || {};
+  const totalSecondsSpent = Object.values(lessonsProgress).reduce((acc: number, curr: any) => acc + (curr.timeSpent || 0), 0) as number;
+  const averageScore = useMemo(() => {
+    const scores = Object.values(lessonsProgress).map((p: any) => p.bestScore).filter(s => s !== undefined);
+    if (scores.length === 0) return 0;
+    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  }, [lessonsProgress]);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h > 0) return `${h} س ${m} د`;
+    return `${m} د`;
+  };
+
   const dailyTarget = userData?.learningGoals?.dailyVocabTarget || 10;
   const totalWordsLearned = useMemo(() => {
     return curriculum
@@ -124,6 +139,26 @@ export function Dashboard({ setCurrentTab, setCurrentLesson }: DashboardProps) {
         </div>
       </div>
 
+      {/* Detailed Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-[#0f0f11] border border-white/5 rounded-2xl p-4 text-center">
+          <p className="text-slate-500 text-xs mb-1 uppercase tracking-wider">إجمالي الوقت</p>
+          <p className="text-2xl font-serif text-white">{formatTime(totalSecondsSpent)}</p>
+        </div>
+        <div className="bg-[#0f0f11] border border-white/5 rounded-2xl p-4 text-center">
+          <p className="text-slate-500 text-xs mb-1 uppercase tracking-wider">متوسط الدرجات</p>
+          <p className="text-2xl font-serif text-amber-500">{averageScore}%</p>
+        </div>
+        <div className="bg-[#0f0f11] border border-white/5 rounded-2xl p-4 text-center">
+          <p className="text-slate-500 text-xs mb-1 uppercase tracking-wider">دروس مكتملة</p>
+          <p className="text-2xl font-serif text-white">{completedLessons.length}</p>
+        </div>
+        <div className="bg-[#0f0f11] border border-white/5 rounded-2xl p-4 text-center">
+          <p className="text-slate-500 text-xs mb-1 uppercase tracking-wider">إجمالي النقاط</p>
+          <p className="text-2xl font-serif text-green-500 font-mono">{userData?.points || 0}</p>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-[#0f0f11] to-[#0a0a0b] rounded-3xl p-6 md:p-10 border border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden">
         {/* French Flag Decorative */}
@@ -153,6 +188,25 @@ export function Dashboard({ setCurrentTab, setCurrentLesson }: DashboardProps) {
       </div>
 
       {/* Quick Actions */}
+      {/* Challenges Section */}
+      <h4 className="text-xl md:text-2xl font-serif text-white mt-8 md:mt-12 mb-4 md:mb-6">التحديات الحالية</h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {[
+          { title: 'تحدي يومي: 10 مفردات', desc: 'لا تفوت هدفك اليومي!', icon: '🎯', status: 'مستمر' },
+          { title: 'تحدي أسبوعي: قواعد', desc: 'أكمل 3 دروس قواعد', icon: '⚖️', status: 'مستمر' },
+          { title: 'تحدي شهري: طلاقة', desc: 'أكمل 10 محادثات', icon: '🚀', status: 'جديد' }
+        ].map((c, i) => (
+          <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+            <div className="text-3xl">{c.icon}</div>
+            <div>
+              <p className="text-white font-bold text-sm">{c.title}</p>
+              <p className="text-slate-400 text-xs">{c.desc}</p>
+            </div>
+            <div className="ml-auto text-amber-500 font-bold text-[10px] bg-amber-500/10 px-2 py-1 rounded">{c.status}</div>
+          </div>
+        ))}
+      </div>
+
       <h4 className="text-xl md:text-2xl font-serif text-white mt-8 md:mt-12 mb-4 md:mb-6">ممارسات يومية موصى بها</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <button 

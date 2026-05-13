@@ -19,6 +19,9 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
   const lesson = curriculum.find(l => l.id === lessonId);
   const { user, userData } = useAuth();
   
+  // Progress tracking
+  const [startTime] = useState(Date.now());
+  
   // Exercise states
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [blankAnswers, setBlankAnswers] = useState<Record<number, string>>({});
@@ -139,14 +142,50 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
   const isCompleted = userData?.completedLessons?.includes(lessonId) || false;
 
   const handleCompleteLesson = async () => {
-    if (!user || isCompleted || !lessonId || isCompleting) return;
+    if (!user || !lessonId || isCompleting) return;
     
+    // Calculate score
+    let correctCount = 0;
+    const totalExercises = lesson.exercises?.length || 0;
+    
+    lesson.exercises?.forEach((ex, index) => {
+      if (ex.type === 'multiple_choice' || ex.type === 'listening' || ex.type === 'image_match') {
+        if (selectedAnswers[index] === ex.answer) correctCount++;
+      } else if (ex.type === 'fill_blanks') {
+        if (blankAnswers[index]?.toLowerCase().trim() === ex.answer.toLowerCase()) correctCount++;
+      } else if (ex.type === 'matching') {
+        const state = matchingState[index];
+        if (state && Object.keys(state.matches).length === ex.pairs.length) correctCount++;
+      } else if (ex.type === 'sentence_ordering') {
+        const state = sentenceOrderingState[index];
+        if (state && state.selected.join(' ') === ex.answer.join(' ')) correctCount++;
+      }
+    });
+
+    const scorePercentage = totalExercises > 0 ? Math.round((correctCount / totalExercises) * 100) : 100;
+    const timeSpent = Math.round((Date.now() - startTime) / 1000); // in seconds
+
     setIsCompleting(true);
     try {
       const userRef = doc(db, 'users', user.uid);
-      const updatedLessons = [...(userData?.completedLessons || []), lessonId];
-      const newPoints = (userData?.points || 0) + 50;
+      const updatedLessons = [...(userData?.completedLessons || [])];
+      if (!updatedLessons.includes(lessonId)) {
+        updatedLessons.push(lessonId);
+      }
       
+      const newPoints = (userData?.points || 0) + (isCompleted ? 10 : 50); // Less points for re-completing
+      
+      const lessonsProgress = { ...(userData?.lessonsProgress || {}) };
+      const currentProgress = lessonsProgress[lessonId] || { timeSpent: 0, attempts: 0, bestScore: 0 };
+      
+      lessonsProgress[lessonId] = {
+        completed: true,
+        timeSpent: currentProgress.timeSpent + timeSpent,
+        bestScore: Math.max(currentProgress.bestScore, scorePercentage),
+        attempts: (currentProgress.attempts || 0) + 1,
+        updatedAt: Date.now()
+      };
+
       let updatedBadges = [...(userData?.badges || [])];
       
       // Basic badges
@@ -180,6 +219,7 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
       
       await updateDoc(userRef, {
         completedLessons: updatedLessons,
+        lessonsProgress: lessonsProgress,
         points: newPoints,
         badges: updatedBadges,
         updatedAt: serverTimestamp()
@@ -328,12 +368,25 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-12 md:mb-16">
           {lesson.vocabulary.map((vocab, index) => (
-            <div key={index} className="bg-white/5 p-4 md:p-5 rounded-xl border border-white/10 flex items-center justify-between hover:bg-white/10 transition-colors">
-              <div>
-                <p className="font-serif italic text-white mb-1 french-text text-lg md:text-xl">{vocab.fr}</p>
-                <p className="text-slate-400 text-xs md:text-sm">{vocab.ar}</p>
+            <div key={index} className="bg-white/5 p-4 md:p-5 rounded-xl border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/10 transition-colors">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <p className="font-serif italic text-white french-text text-lg md:text-xl">{vocab.fr}</p>
+                  <p className="text-slate-400 text-xs md:text-sm">({vocab.ar})</p>
+                </div>
+                {vocab.example && (
+                  <div className="mt-2 pl-4 border-l-2 border-white/5">
+                    <p className="text-slate-300 italic text-sm mb-1 french-text flex items-center gap-2">
+                       <span>{vocab.example.fr}</span>
+                       <button onClick={() => playAudio(vocab.example!.fr)} className="text-slate-500 hover:text-amber-500 transition-colors">
+                         <Volume2 className="w-3 h-3" />
+                       </button>
+                    </p>
+                    <p className="text-slate-500 text-xs">{vocab.example.ar}</p>
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 self-end md:self-auto">
                 <button 
                   onClick={() => playAudio(vocab.fr)}
                   className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 hover:bg-amber-500/20 transition-colors flex-shrink-0 border border-amber-500/30"
@@ -594,6 +647,58 @@ export function LessonView({ lessonId, setCurrentTab }: LessonViewProps) {
                                 <span>{opt}</span>
                                 {showCorrect && <CheckCircle2 className="w-5 h-5 flex-shrink-0" />}
                                 {showWrong && <XCircle className="w-5 h-5 flex-shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (ex.type === 'image_match') {
+                    const isAnswered = selectedAnswers[index] !== undefined;
+                    const isCorrect = selectedAnswers[index] === ex.answer;
+                    return (
+                      <div key={index} className="bg-white/5 rounded-2xl p-4 md:p-6 border border-white/10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <p className="text-base md:text-lg text-white font-bold leading-none mb-1">{index + 1}. مطابقة الصور</p>
+                        </div>
+                        
+                        <p className="text-slate-200 mb-6 font-medium bg-white/5 p-3 rounded-lg border border-white/5">{ex.question}</p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {ex.options.map((opt) => {
+                            const isSelected = selectedAnswers[index] === opt.id;
+                            const showCorrect = isAnswered && opt.id === ex.answer;
+                            const showWrong = isAnswered && isSelected && !isCorrect;
+                            
+                            let borderClass = "border-white/10 hover:border-white/30";
+                            if (showCorrect) borderClass = "border-green-500 ring-2 ring-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.3)]";
+                            else if (showWrong) borderClass = "border-red-500 opacity-60";
+                            else if (isSelected) borderClass = "border-amber-500 ring-2 ring-amber-500/20";
+                            else if (isAnswered) borderClass = "border-white/5 opacity-40";
+
+                            return (
+                              <button
+                                key={opt.id}
+                                disabled={isAnswered}
+                                onClick={() => handleMultipleChoice(index, opt.id)}
+                                className={`group relative rounded-2xl border-2 overflow-hidden transition-all aspect-square flex flex-col ${borderClass}`}
+                              >
+                                <img src={opt.image} alt={opt.text} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <div className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                  <span className="text-white font-bold text-sm w-full text-center">{opt.text}</span>
+                                </div>
+                                {showCorrect && (
+                                  <div className="absolute top-2 right-2 bg-green-500 text-black rounded-full p-1 shadow-lg">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                  </div>
+                                )}
+                                {showWrong && (
+                                  <div className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-lg">
+                                    <XCircle className="w-5 h-5" />
+                                  </div>
+                                )}
                               </button>
                             );
                           })}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Target, Save, Loader2, BookOpen, Edit2, Check } from 'lucide-react';
+import { Target, Save, Loader2, BookOpen, Edit2, Check, GraduationCap, BookA } from 'lucide-react';
 import { useAuth } from '../components/FirebaseProvider';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -9,6 +9,8 @@ export function Profile() {
   const { user, userData } = useAuth();
   const [dailyVocabTarget, setDailyVocabTarget] = useState(10);
   const [focusTopics, setFocusTopics] = useState<string[]>([]);
+  const [currentLevel, setCurrentLevel] = useState<string>('Beginner');
+  const [learningGoal, setLearningGoal] = useState<string>('Travel');
   const [reminders, setReminders] = useState<{ time: string; activity: string }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
@@ -24,13 +26,14 @@ export function Profile() {
     'المحادثة اليومية (Daily UI)'
   ];
 
-  // In `useEffect` for userData:
   useEffect(() => {
     if (userData?.learningGoals) {
       setDailyVocabTarget(userData.learningGoals.dailyVocabTarget || 10);
       setFocusTopics(userData.learningGoals.focusTopics || []);
       setReminders(userData.learningGoals.reminders || []);
     }
+    if (userData?.currentLevel) setCurrentLevel(userData.currentLevel);
+    if (userData?.learningGoal) setLearningGoal(userData.learningGoal);
   }, [userData]);
   
   const addReminder = () => {
@@ -69,6 +72,8 @@ export function Profile() {
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
+        currentLevel,
+        learningGoal,
         learningGoals: {
           dailyVocabTarget,
           focusTopics,
@@ -138,6 +143,62 @@ export function Profile() {
 
         <div className="space-y-8">
           
+          {/* Level and Goal Selection */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 relative overflow-hidden">
+             <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl font-bold text-white">تخصيص رحلة التعلم</h3>
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="space-y-4">
+                  <label className="text-sm font-bold text-slate-500 uppercase tracking-widest block pr-2">المستوى الحالي</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 'Beginner', label: 'مبتدئ (A1/A2)' },
+                      { id: 'Intermediate', label: 'متوسط (B1/B2)' },
+                      { id: 'Advanced', label: 'متقدم (C1/C2)' }
+                    ].map((level) => (
+                      <button
+                        key={level.id}
+                        onClick={() => setCurrentLevel(level.id)}
+                        className={`p-3 rounded-xl border text-right transition-all flex items-center justify-between ${
+                          currentLevel === level.id ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[#0a0a0b] border-white/10 text-slate-400 hover:border-white/30'
+                        }`}
+                      >
+                        <span className="text-sm font-bold">{level.label}</span>
+                        {currentLevel === level.id && <Check className="w-4 h-4 ml-2" />}
+                      </button>
+                    ))}
+                  </div>
+               </div>
+
+               <div className="space-y-4">
+                  <label className="text-sm font-bold text-slate-500 uppercase tracking-widest block pr-2">الهدف الرئيسي</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 'Travel', label: 'السفر والسياحة' },
+                      { id: 'Work', label: 'العمل والحياة المهنية' },
+                      { id: 'Study', label: 'الدراسة والتحصيل الأكاديمي' }
+                    ].map((goal) => (
+                      <button
+                        key={goal.id}
+                        onClick={() => setLearningGoal(goal.id)}
+                        className={`p-3 rounded-xl border text-right transition-all flex items-center justify-between ${
+                          learningGoal === goal.id ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-[#0a0a0b] border-white/10 text-slate-400 hover:border-white/30'
+                        }`}
+                      >
+                        <span className="text-sm font-bold">{goal.label}</span>
+                        {learningGoal === goal.id && <Check className="w-4 h-4 ml-2" />}
+                      </button>
+                    ))}
+                  </div>
+               </div>
+             </div>
+          </div>
+
           {/* Target Vocabulary */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
              {isEditingTarget && (

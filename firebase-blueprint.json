@@ -26,6 +26,25 @@
           "items": { "type": "string" },
           "description": "Array of completed lesson IDs"
         },
+        "lessonsProgress": {
+          "type": "object",
+          "description": "Map of lessonId to progress details",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "completed": { "type": "boolean" },
+              "timeSpent": { "type": "number", "description": "Seconds spent on lesson" },
+              "bestScore": { "type": "number" },
+              "attempts": { "type": "number" },
+              "updatedAt": { "type": "number" }
+            }
+          }
+        },
+        "activeChallenges": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "IDs of active challenges"
+        },
         "learningGoals": {
           "type": "object",
           "properties": {

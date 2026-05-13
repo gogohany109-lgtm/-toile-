@@ -2,6 +2,7 @@ export type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
 export type Exercise = 
   | { type: 'multiple_choice'; question: string; options: string[]; answer: string }
+  | { type: 'image_match'; question: string; options: { id: string; text: string; image: string }[]; answer: string }
   | { type: 'fill_blanks'; text: string; answer: string; hint?: string }
   | { type: 'matching'; pairs: { fr: string; ar: string }[] }
   | { type: 'sentence_ordering'; words: string[]; answer: string[] }
@@ -13,183 +14,246 @@ export interface Lesson {
   description: string;
   level: Level;
   content: string;
-  vocabulary: { fr: string; ar: string }[];
+  vocabulary: { 
+    fr: string; 
+    ar: string;
+    example?: { fr: string; ar: string };
+  }[];
   exercises?: Exercise[];
 }
 
 export const curriculum: Lesson[] = [
   // ---------------- BEGINNER (A1/A2) ----------------
   {
-    id: 'l1',
+    id: 'l_alphabet',
     title: 'الأبجدية والنطق الأساسي',
-    description: 'الألف باء الفرنسية والقواعد الأساسية للنطق الصحيح.',
+    description: 'الألف باء الفرنسية والقواعد الأساسية للنطق الصحيح مع تمارين تفاعلية.',
     level: 'A1',
-    content: 'في هذا الدرس سنتعلم نطق الحروف الأبجدية الفرنسية والتفريق بين الحروف الصوتية والحروف الساكنة. من الضروري معرفة نطق كل حرف لتسهيل قراءة الكلمات.',
+    content: 'في هذا الدرس سنتعلم نطق الحروف الأبجدية الفرنسية وعددها 26 حرفاً. التفريق بين الحروف الصوتية (Voyelles) والحروف الساكنة (Consonnes) هو الخطوة الأولى لإتقان النطق.',
     vocabulary: [
-      { fr: 'Alphabet', ar: 'الأبجدية' },
+      { fr: 'L\'alphabet', ar: 'الأبجدية' },
       { fr: 'Voyelle', ar: 'حرف صوتي' },
-      { fr: 'Consonne', ar: 'حرف ساكن' }
+      { fr: 'Consonne', ar: 'حرف ساكن' },
+      { fr: 'Épeler', ar: 'يتهجى' }
     ],
     exercises: [
       {
         type: 'multiple_choice',
-        question: 'كم عدد الحروف الصوتية المعتادة في اللغة الفرنسية (باستثناء y و h)؟',
+        question: 'كم عدد الحروف الصوتية في اللغة الفرنسية؟',
         options: ['5', '6', '7', '8'],
         answer: '6'
       },
       {
         type: 'listening',
-        audioText: 'Alphabet',
-        question: 'ما هي الكلمة التي سمعتها؟',
-        options: ['Alphabet', 'Consonne', 'Voyelle'],
-        answer: 'Alphabet'
+        audioText: 'A B C D',
+        question: 'ما هي الحروف التي سمعتها؟',
+        options: ['A B C D', 'E F G H', 'I J K L'],
+        answer: 'A B C D'
       }
     ]
   },
   {
-    id: 'l2',
-    title: 'التحيات وقواعد أساسية',
-    description: 'تعريف عن النفس، التحيات، والجمل الأولى ومفردات شائعة.',
+    id: 'l_greetings',
+    title: 'التحيات والتعارف',
+    description: 'تعلم كيف تلقي التحية وتقدم نفسك للآخرين بعبارات بسيطة.',
     level: 'A1',
-    content: 'ستتعلم كيف تلقي التحية وتقدم نفسك باللغة الفرنسية. من المهم التفريق بين التحية الرسمية وغير الرسمية وكيفية استخدام الضمائر الأساسية.',
+    content: 'الفرنسيون يقدّرون كثيراً استخدام التحيات المناسبة. "Bonjour" هي التحية الأكثر شيوعاً وتستخدم طوال اليوم حتى المساء.',
     vocabulary: [
       { fr: 'Bonjour', ar: 'صباح الخير / مرحباً' },
       { fr: 'Bonsoir', ar: 'مساء الخير' },
-      { fr: 'Salut', ar: 'مرحباً (غير رسمية)' },
-      { fr: 'Je suis', ar: 'أنا أكون' },
-      { fr: 'Merci', ar: 'شكراً' }
+      { fr: 'Comment ça va ?', ar: 'كيف حالك؟' },
+      { fr: 'Je m\'appelle...', ar: 'اسمي هو...' },
+      { fr: 'Enchanté(e)', ar: 'تشرفنا' }
     ],
     exercises: [
       {
         type: 'matching',
         pairs: [
           { fr: 'Bonjour', ar: 'صباح الخير' },
-          { fr: 'Je suis', ar: 'أنا' },
-          { fr: 'Salut', ar: 'مرحباً (غير رسمية)' }
+          { fr: 'Comment ça va ?', ar: 'كيف حالك؟' },
+          { fr: 'Merci', ar: 'شكراً' }
         ]
       },
       {
-        type: 'sentence_ordering',
-        words: ['suis', 'Je', 'étudiant.'],
-        answer: ['Je', 'suis', 'étudiant.']
-      }
-    ]
-  },
-  {
-    id: 'l3',
-    title: 'في المطعم ومفردات الطعام',
-    description: 'كيفية طلب الطعام وفهم قائمة الطعام ومفردات التذوق.',
-    level: 'A2',
-    content: 'عند الذهاب إلى مطعم في فرنسا، هناك عبارات معتادة تستخدم للطلب والتحدث مع النادل.',
-    vocabulary: [
-      { fr: 'La carte', ar: 'قائمة الطعام' },
-      { fr: "L'addition", ar: 'الفاتورة' },
-      { fr: 'Je voudrais...', ar: 'أود / أريد...' },
-      { fr: 'Une table pour deux', ar: 'طاولة لشخصين' }
-    ],
-    exercises: [
+        type: 'image_match',
+        question: 'اختر الصورة المناسبة للتحية "Bonjour" (الصباح):',
+        options: [
+          { id: '1', text: 'صباح', image: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=200&h=200&fit=crop' },
+          { id: '2', text: 'ليل', image: 'https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?w=200&h=200&fit=crop' },
+          { id: '3', text: 'طعام', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&h=200&fit=crop' }
+        ],
+        answer: '1'
+      },
       {
         type: 'fill_blanks',
-        text: 'Je _____ une table pour deux.',
-        answer: 'voudrais',
-        hint: 'أريد / أود'
-      },
-      {
-        type: 'listening',
-        audioText: 'Je voudrais une table pour deux.',
-        question: 'اختر الترجمة الصحيحة لما سمعته:',
-        options: ['أريد طاولة لشخص واحد', 'أريد طاولة لشخصين', 'أين الحساب من فضلك؟'],
-        answer: 'أريد طاولة لشخصين'
+        text: 'Je _____ Ahmed.',
+        answer: 'm\'appelle',
+        hint: 'اسمي هو'
       }
     ]
   },
-
-  // ---------------- INTERMEDIATE (B1/B2) ----------------
   {
-    id: 'l4',
-    title: 'تعبيرات أكثر تعقيداً والأزمنة',
-    description: 'فهم أعمق للقواعد: الماضي المركب والمستقبل البسيط.',
-    level: 'B1',
-    content: 'المستوى المتوسط يركز على الانتقال من الجمل البسيطة إلى الجمل المركبة واستخدام الأزمنة بدقة.',
+    id: 'l_numbers',
+    title: 'الأرقام من 0 إلى 20',
+    description: 'العد الأساسي في اللغة الفرنسية وحفظ الأرقام الأولى.',
+    level: 'A1',
+    content: 'الأرقام أساسية في كل لغة. في هذا الدرس سنركز على أول عشرين رقماً، وهي اللبنة الأساسية للعد الأكبر.',
     vocabulary: [
-      { fr: 'Hier', ar: 'أمس' },
-      { fr: "J'ai mangé", ar: 'لقد أكلت' },
-      { fr: 'Demain', ar: 'غداً' }
+      { fr: 'Un', ar: 'واحد' },
+      { fr: 'Deux', ar: 'اثنان' },
+      { fr: 'Trois', ar: 'ثلاثة' },
+      { fr: 'Dix', ar: 'عشرة' },
+      { fr: 'Vingt', ar: 'عشرون' }
     ],
     exercises: [
-      {
-        type: 'sentence_ordering',
-        words: ['mangé', "J'ai", 'une pomme', 'hier.'],
-        answer: ["J'ai", 'mangé', 'une pomme', 'hier.']
-      },
       {
         type: 'multiple_choice',
-        question: 'ما هو الزمن المستخدم في جملة "J\'ai mangé"؟',
-        options: ['Le futur simple', 'Le présent', 'Le passé composé', 'L\'imparfait'],
-        answer: 'Le passé composé'
+        question: 'ما هو الرقم 5 بالفرنسية؟',
+        options: ['Quatre', 'Cinq', 'Six', 'Sept'],
+        answer: 'Cinq'
+      },
+      {
+        type: 'sentence_ordering',
+        words: ['un', 'deux', 'trois', 'quatre'],
+        answer: ['un', 'deux', 'trois', 'quatre']
       }
     ]
   },
   {
-    id: 'l5',
-    title: 'توسيع المفردات والمواقف الاجتماعية',
-    description: 'النقاش عن البيئة والتكنولوجيا والسفر والتعبير عن الرأي.',
-    level: 'B2',
-    content: 'يهدف هذا الدرس إلى زيادة حصيلتك اللغوية في مواضيع متنوعة كالبيئة والمجتمع وكيفية إبداء الأسباب والحجج.',
+    id: 'l_common_phrases',
+    title: 'عبارات شائعة للحياة اليومية',
+    description: 'أهم الجمل التي ستحتاجها في مواقف يومية بسيطة.',
+    level: 'A1',
+    content: 'هناك عبارات قصيرة تجعل تواصلك أيسر، مثل طلب الإذن أو السؤال عن المكان.',
     vocabulary: [
-      { fr: 'L\'environnement', ar: 'البيئة' },
-      { fr: 'À mon avis', ar: 'في رأيي' },
-      { fr: 'Cependant', ar: 'على أية حال / مع ذلك' }
+      { fr: 'S\'il vous plaît', ar: 'من فضلك (رسمي)' },
+      { fr: 'Où est... ?', ar: 'أين هو... ؟' },
+      { fr: 'Pardon', ar: 'عذراً' },
+      { fr: 'Je ne comprends pas', ar: 'أنا لا أفهم' }
     ],
     exercises: [
       {
         type: 'fill_blanks',
-        text: '_____ , il faut agir vite.',
-        answer: 'Cependant',
-        hint: 'ومع ذلك'
+        text: '_____ est la gare ?',
+        answer: 'Où',
+        hint: 'أين'
       }
     ]
   },
-
-  // ---------------- ADVANCED (C1/C2) ----------------
   {
-    id: 'l6',
-    title: 'فهم نصوص معقدة وتعابير اصطلاحية',
-    description: 'قراءة الصحف والأدب واللغة المجازية.',
-    level: 'C1',
-    content: 'في هذا المستوى ستبدأ بتذوق اللغة الفرنسية والتعرف على التعابير الاصطلاحية وفهم المعاني الضمنية.',
+    id: 'l_food_advanced',
+    title: 'عالم الطعام والمائدة والمطاعم',
+    description: 'مفردات متقدمة عن الطعام، التذوق، وتجربة المطاعم الراقية.',
+    level: 'B2',
+    content: 'المطبخ الفرنسي هو جزء لا يتجزأ من الثقافة. تعلم كيفية وصف النكهات وتقنيات الطهي المختلفة.',
     vocabulary: [
-      { fr: 'Avoir le cafard', ar: 'الشعور بالاكتئاب (تعبير مجازي)' },
-      { fr: 'Coup de foudre', ar: 'الحب من أول نظرة (تعبير مجازي)' },
-      { fr: 'Faire la grasse matinée', ar: 'النوم لوقت متأخر' }
+      { 
+        fr: 'Gastronomie', 
+        ar: 'فن الطهي / الغستروونوميا',
+        example: { fr: 'La gastronomie française est inscrite au patrimoine de l\'UNESCO.', ar: 'تم إدراج فن الطهي الفرنسي ضمن تراث اليونسكو.' }
+      },
+      { 
+        fr: 'Assaisonnement', 
+        ar: 'تتبيل',
+        example: { fr: 'L\'assaisonnement de cette salade est parfait.', ar: 'تتبيل هذه السلطة مثالي.' }
+      },
+      { 
+        fr: 'Croustillant', 
+        ar: 'مقرمش',
+        example: { fr: 'J\'adore le pain bien croustillant.', ar: 'أنا أعشق الخبز المقرمش جيداً.' }
+      }
     ],
     exercises: [
       {
-        type: 'matching',
-        pairs: [
-          { fr: 'Avoir le cafard', ar: 'الشعور بالحزن' },
-          { fr: 'Coup de foudre', ar: 'الحب من أول نظرة' },
-          { fr: 'Faire la grasse matinée', ar: 'النوم طويلاً' }
-        ]
+        type: 'multiple_choice',
+        question: 'ما معنى كلمة "Croustillant"؟',
+        options: ['حامض', 'مقرمش', 'حار', 'مالح'],
+        answer: 'مقرمش'
       }
     ]
   },
   {
-    id: 'l7',
-    title: 'طلاقة في المحادثة والنقاش الفلسفي',
-    description: 'مهارات التفاوض، دحض الحجج، والتعبير عن أفكار تجريدية.',
-    level: 'C2',
-    content: 'المستوى النهائي للطلاقة. التعامل مع اللغة كمتحدث أصلي وإجادة الصياغة الأسلوبية المعقدة.',
+    id: 'l_travel_advanced',
+    title: 'السفر والاستكشاف العالمي',
+    description: 'خطط لرحلاتك، استكشف الثقافات، وتحدث عن تجارب السفر المتقدمة.',
+    level: 'B2',
+    content: 'السفر يتطلب مفردات تتعلق بالحجوزات، التأمين، ووصف المعالم السياحية بدقة.',
     vocabulary: [
-      { fr: 'Indéniablement', ar: 'بشكل لا ينكر' },
-      { fr: 'Nonobstant', ar: 'بالرغم من ذلك' },
-      { fr: 'Élucider', ar: 'توضيح / إلقاء الضوء على' }
+      { 
+        fr: 'Itinéraire', 
+        ar: 'مسار الرحلة',
+        example: { fr: 'Nous avons préparé un itinéraire pour visiter Paris.', ar: 'لقد أعددنا مسار رحلة لزيارة باريس.' }
+      },
+      { 
+        fr: 'Dépaysement', 
+        ar: 'تغيير الجو / الشعور بالغربة الممتعة',
+        example: { fr: 'Ce voyage en Asie m\'a offert un vrai dépaysement.', ar: 'هذه الرحلة إلى آسيا قدمت لي تغييراً حقيقياً في الجو.' }
+      }
     ],
     exercises: [
       {
         type: 'sentence_ordering',
-        words: ['sujet', 'Il', 'faut', 'élucider', 'ce'],
-        answer: ['Il', 'faut', 'élucider', 'ce', 'sujet']
+        words: ['mon', 'Voilà', 'itinéraire', 'de', 'voyage.'],
+        answer: ['Voilà', 'mon', 'itinéraire', 'de', 'voyage.']
+      }
+    ]
+  },
+  {
+    id: 'l_common_mistakes',
+    title: 'أخطاء شائعة في الفرنسية',
+    description: 'تعرف على الأخطاء الأكثر تكراراً لدى المتعلمين وكيفية تجنبها.',
+    level: 'A2',
+    content: 'كثير من المتعلمين يقعون في فخ "الترجمة الحرفية" أو خلط القواعد. هذا الدرس يجمع أهم الأخطاء التي يجب عليك تجنبها لتبدو أكثر احترافية.',
+    vocabulary: [
+      { 
+        fr: 'Faux ami', 
+        ar: 'صديق كاذب (كلمة متشابهة في النطق ومختلفة في المعنى)',
+        example: { fr: 'Attention aux faux amis entre le français et l\'anglais.', ar: 'احذر من الأصدقاء الكاذبين بين الفرنسية والإنجليزية.' }
+      },
+      { 
+        fr: 'Contresens', 
+        ar: 'سوء فهم / عكس المعنى المقصود',
+        example: { fr: 'Une mauvaise traduction peut causer un contresens.', ar: 'ترجمة سيئة قد تتسبب في سوء فهم.' }
+      }
+    ],
+    exercises: [
+      {
+        type: 'multiple_choice',
+        question: 'ما هو "Faux ami"؟',
+        options: ['صديق حقيقي', 'كلمة بنفس النطق ومعنى مختلف', 'خطأ نحوي', 'فعل غير منتظم'],
+        answer: 'كلمة بنفس النطق ومعنى مختلف'
+      }
+    ]
+  },
+  {
+    id: 'l_work_advanced',
+    title: 'العمل والحياة المهنية',
+    description: 'المصطلحات المهنية، كتابة السيرة الذاتية، وإدارة الاجتماعات بالفرنسية.',
+    level: 'C1',
+    content: 'في البيئة الاحترافية، الدقة في استخدام الكلمات تعكس احترافيتك. تعلم مصطلحات الشركات والتفاوض.',
+    vocabulary: [
+      { 
+        fr: 'Ressources humaines', 
+        ar: 'الموارد البشرية',
+        example: { fr: 'Il travaille au département des ressources humaines.', ar: 'هو يعمل في قسم الموارد البشرية.' }
+      },
+      { 
+        fr: 'Compétences', 
+        ar: 'مهارات / كفاءات',
+        example: { fr: 'Quelles sont vos compétences principales ?', ar: 'ما هي مهاراتك الأساسية؟' }
+      },
+      { 
+        fr: 'Télétravail', 
+        ar: 'العمل عن بعد',
+        example: { fr: 'Le télétravail est devenu très courant.', ar: 'أصبح العمل عن بعد شائعاً جداً.' }
+      }
+    ],
+    exercises: [
+      {
+        type: 'multiple_choice',
+        question: 'ما هو المصطلح المقابل لـ "العمل عن بعد"؟',
+        options: ['Travail d\'équipe', 'Télétravail', 'Bénévolat', 'Stage'],
+        answer: 'Télétravail'
       }
     ]
   }

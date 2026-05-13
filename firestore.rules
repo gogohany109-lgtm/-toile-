@@ -23,6 +23,8 @@ service cloud.firestore {
              (data.get('currentLevel', '') is string && data.get('currentLevel', '').size() <= 64) &&
              (data.get('completedLessons', []) is list && data.get('completedLessons', []).size() <= 500) &&
              (data.get('completedLessons', []).size() == 0 || data.get('completedLessons', [])[0] is string) &&
+             (data.get('lessonsProgress', {}) is map && data.get('lessonsProgress', {}).size() <= 500) &&
+             (data.get('activeChallenges', []) is list && data.get('activeChallenges', []).size() <= 50) &&
              (data.get('learningGoals', {}) is map && 
               data.get('learningGoals', {}).size() <= 2 &&
               data.get('learningGoals', {}).get('dailyVocabTarget', 0) is number &&
@@ -53,7 +55,7 @@ service cloud.firestore {
                     incoming().updatedAt == request.time &&
                     incoming().createdAt == existing().createdAt &&
                     incoming().id == existing().id &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'currentLevel', 'completedLessons', 'learningGoals', 'points', 'badges', 'updatedAt']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'currentLevel', 'completedLessons', 'lessonsProgress', 'activeChallenges', 'learningGoals', 'points', 'badges', 'updatedAt']);
                     
       allow delete: if false;
     }

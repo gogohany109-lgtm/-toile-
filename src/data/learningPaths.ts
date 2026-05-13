@@ -24,12 +24,12 @@ export const learningPaths: LearningPath[] = [
       {
         title: 'اللقاء والترحيب',
         description: 'كيف تبدأ محادثة بسيطة وتعرف بنفسك.',
-        lessonIds: ['basics-1', 'greetings']
+        lessonIds: ['l_alphabet', 'l_greetings']
       },
       {
-        title: 'في المطعم وفي الفندق',
-        description: 'طلب الطعام وحجز الغرف.',
-        lessonIds: ['restaurant', 'hotel']
+        title: 'الأرقام والحياة اليومية',
+        description: 'العد والتعامل مع المواقف اليومية.',
+        lessonIds: ['l_numbers', 'l_common_phrases']
       }
     ]
   },
@@ -42,24 +42,24 @@ export const learningPaths: LearningPath[] = [
     duration: '8 أسابيع',
     modules: [
       {
-        title: 'الاجتماعات والمراسلات',
-        description: 'المشاركة في الاجتماعات وكتابة رسائل البريد الإلكتروني.',
-        lessonIds: ['meetings', 'emails']
+        title: 'العمل والاحترافية',
+        description: 'المصطلحات المهنية والتواصل في بيئة العمل.',
+        lessonIds: ['l_work_advanced', 'l_food_advanced']
       }
     ]
   },
   {
     id: 'study-advanced',
-    title: 'التحضير الأكاديمي والجامعي',
+    title: 'التحضير الأكاديكي المتقدم',
     description: 'تطوير المهارات النقدية والتحليلية للدراسة في الجامعات الفرنسية.',
     level: 'Advanced',
     goal: 'Study',
     duration: '12 أسبوع',
     modules: [
       {
-        title: 'الكتابة الأكاديمية',
-        description: 'كتابة المقالات والبحوث الجامعية.',
-        lessonIds: ['academic-writing']
+        title: 'الثقافة والتحليل',
+        description: 'فهم النصوص والمعاني العميقة.',
+        lessonIds: ['l_travel_advanced']
       }
     ]
   }
